@@ -822,6 +822,8 @@ static bool split_central_eir_found(const bt_addr_le_t *addr) {
     // Stop scanning so we can connect to the peripheral device.
     int err = stop_scanning();
     if (err < 0) {
+        release_peripheral_slot(slot_idx);
+        start_scanning();
         return false;
     }
 
@@ -922,7 +924,8 @@ static int start_scanning(void) {
     // Start scanning otherwise.
     is_scanning = true;
     int err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, split_central_device_found);
-    if (err < 0) {
+    if (err < 0 && err != -EALREADY) {
+        is_scanning = false;
         LOG_ERR("Scanning failed to start (err %d)", err);
         return err;
     }
